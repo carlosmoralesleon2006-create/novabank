@@ -13,12 +13,25 @@ Las funcionalidades principales incluyen:
 - **Java 17**: Lenguaje de programación principal.
 - **Apache Maven**: Gestión de dependencias y automatización del ciclo de construcción.
 - **JUnit 5**: Framework para pruebas unitarias.
+- **Mockito**: Herramienta para la creación de objetos simulados (mocks) y el aislamiento de dependencias en las pruebas.
 - **Git y GitHub**: Control de versiones y alojamiento del repositorio.
 
 ## ⚙️ Requisitos del sistema
 Para compilar y ejecutar este proyecto en tu entorno local, necesitarás tener instalado:
 - **Java Development Kit (JDK) 17** o superior.
 - **Apache Maven 3.6** o superior.
+
+## 📁 Estructura del proyecto
+El código fuente sigue una arquitectura estructurada por capas para separar responsabilidades. El paquete principal es `com.novabank`, dentro del cual encontramos:
+
+* **`modelo/`**: Contiene las clases que representan las entidades del dominio de negocio (`Cliente`, `Cuenta`, `Movimiento` y el enumerador `TipoMovimiento`). Son objetos puramente de datos.
+* **`repositorio/`**: Capa de acceso a datos. En este módulo incluye la clase `Memoria`, encargada de almacenar temporalmente la información utilizando colecciones estándar de Java (Maps) y gestionar los contadores de IDs.
+* **`servicio/`**: Contiene la lógica de negocio de la aplicación (`ClienteService`, `CuentaService`, `OperacionService`). Aquí se realizan las validaciones, la generación de IBANs y las operaciones matemáticas de los saldos.
+* **`Main.java`**: Es el punto de entrada de la aplicación. Gestiona la interfaz interactiva por consola y conecta la entrada del usuario con los servicios correspondientes.
+
+### Otros directorios importantes:
+* **`src/main/resources/`**: Contiene el archivo `schema.sql` con el diseño relacional de la base de datos para futuras implementaciones.
+* **`src/test/java/`**: Contiene la suite de pruebas unitarias automatizadas (JUnit 5 + Mockito) organizadas en paralelo a la estructura principal.
 
 ## 🚀 Instrucciones de ejecución
 
