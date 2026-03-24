@@ -4,11 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class Movimiento {
-    private Long id;
-    private String numeroCuenta;
-    private TipoMovimiento tipo;
-    private BigDecimal cantidad;
-    private LocalDateTime fecha;
+    private Long id; //Identificador único del movimiento
+    private String numeroCuenta; //Numero de la cuenta asociada
+    private TipoMovimiento tipo; //Tipo de movimiento sacado de la enumeración
+    private BigDecimal cantidad; //Cantidad de dinero usada
+    private LocalDateTime fecha; //Fecha de realización del movimiento
 
     public Movimiento(String numeroCuenta, TipoMovimiento tipo, BigDecimal cantidad) {
         this.numeroCuenta = numeroCuenta;

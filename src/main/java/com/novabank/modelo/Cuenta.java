@@ -4,11 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class Cuenta {
-    private Long id;
-    private String numeroCuenta;
-    private Long clienteId;
-    private BigDecimal saldo;
-    private LocalDateTime fechaCreacion;
+    private Long id; //Identificador único de la cuenta
+    private String numeroCuenta; //Número unico de la cuenta
+    private Long clienteId; //Identificador del cliente asociado a la cuenta
+    private BigDecimal saldo; //Cantidad de dinero que posee la cuenta
+    private LocalDateTime fechaCreacion; //Fecha en la que creó la cuenta
 
     public Cuenta(String numeroCuenta, Long clienteId) {
         this.numeroCuenta = numeroCuenta;

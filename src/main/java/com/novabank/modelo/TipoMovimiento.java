@@ -1,5 +1,7 @@
 package com.novabank.modelo;
 
+
+//ENUMERACIÓN USADA PARA INDICAR EL TIPO DE MOVIMIENTO REALIZADO
 public enum TipoMovimiento {
     DEPOSITO,
     RETIRO,

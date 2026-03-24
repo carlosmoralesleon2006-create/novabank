@@ -6,10 +6,9 @@ import com.novabank.modelo.TipoMovimiento;
 import com.novabank.repositorio.Memoria;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class OperacionService {
 
@@ -21,23 +20,31 @@ public class OperacionService {
         this.cuentaService = cuentaService;
     }
 
+    //METODO ENCARGADO DE DEPOSITAR DINERO EN EL SALDO DE UNA CUENTA
     public void depositar(String numeroCuenta, BigDecimal cantidad) {
-        validarCantidadPositiva(cantidad);
-        Cuenta cuenta = obtenerCuentaExistente(numeroCuenta);
+        Cuenta cuenta = cuentaService.buscarPorNumero(numeroCuenta);
+        if (cuenta == null) {
+            throw new IllegalArgumentException("La cuenta no existe.");
+        }
 
+        //Añadimos la cantidad al saldo
         cuenta.setSaldo(cuenta.getSaldo().add(cantidad));
+
+        //Creamos y guardamos el movimiento
         Movimiento mov = new Movimiento(numeroCuenta, TipoMovimiento.DEPOSITO, cantidad);
         memoria.guardarMovimiento(mov);
     }
 
+    //METODO ENCARGADO DE RETIRAR DINERO DEL SALDO DE UNA CUENTA
     public void retirar(String numeroCuenta, BigDecimal cantidad) {
-        validarCantidadPositiva(cantidad);
-        Cuenta cuenta = obtenerCuentaExistente(numeroCuenta);
+        Cuenta cuenta = cuentaService.buscarPorNumero(numeroCuenta);
+        if (cuenta == null) {
+            throw new IllegalArgumentException("La cuenta no existe.");
+        }
 
+        // Compararamos que el saldo sea mayor o igual a la cantidad que se quiere retirar
         if (cuenta.getSaldo().compareTo(cantidad) < 0) {
-            throw new IllegalArgumentException(String.format(
-                    "ERROR: Saldo insuficiente.\nSaldo disponible: %.2f €\nImporte solicitado: %.2f €",
-                    cuenta.getSaldo(), cantidad));
+            throw new IllegalArgumentException("ERROR: Saldo insuficiente.");
         }
 
         cuenta.setSaldo(cuenta.getSaldo().subtract(cantidad));
@@ -45,64 +52,49 @@ public class OperacionService {
         memoria.guardarMovimiento(mov);
     }
 
+    //METODO ENCARGADO DE TRANSFERIR DINERO DE UNA CUENTA DE ORIGEN A UNA CUENTA DE DESTINO
     public void transferir(String cuentaOrigen, String cuentaDestino, BigDecimal cantidad) {
-        if (cuentaOrigen.equals(cuentaDestino)) {
-            throw new IllegalArgumentException("La cuenta origen y la cuenta destino no pueden ser la misma.");
+        Cuenta origen = cuentaService.buscarPorNumero(cuentaOrigen);
+        Cuenta destino = cuentaService.buscarPorNumero(cuentaDestino);
+
+        if (origen == null || destino == null) {
+            throw new IllegalArgumentException("Una de las cuentas no existe.");
         }
-        validarCantidadPositiva(cantidad);
-
-        Cuenta origen = obtenerCuentaExistente(cuentaOrigen);
-        Cuenta destino = obtenerCuentaExistente(cuentaDestino);
-
         if (origen.getSaldo().compareTo(cantidad) < 0) {
-            throw new IllegalArgumentException("ERROR: Saldo insuficiente en la cuenta origen.");
+            throw new IllegalArgumentException("ERROR: Saldo insuficiente.");
         }
 
+        //Retiramos el saldo de la cuenta origen
         origen.setSaldo(origen.getSaldo().subtract(cantidad));
 
         try {
+            //Depositamos el dinero en la cuenta destino
             destino.setSaldo(destino.getSaldo().add(cantidad));
 
+            //Guardamos los movimientos
             memoria.guardarMovimiento(new Movimiento(cuentaOrigen, TipoMovimiento.TRANSFERENCIA_SALIENTE, cantidad));
-            
             memoria.guardarMovimiento(new Movimiento(cuentaDestino, TipoMovimiento.TRANSFERENCIA_ENTRANTE, cantidad));
-            
+
         } catch (Exception e) {
+            //Si algo falla devolvemos el saldo a su estado original
             origen.setSaldo(origen.getSaldo().add(cantidad));
-            throw new RuntimeException("Error inesperado en la transferencia. Operación revertida.", e);
+            throw new RuntimeException("Error en la transferencia");
         }
     }
 
-    // --- CONSULTA ---
-
+    //METODO ENCARGADO DE OBTENER EL HISTORIAL DE MOVIMIENTOS DE UNA CUENTA
     public List<Movimiento> obtenerHistorial(String numeroCuenta) {
-        obtenerCuentaExistente(numeroCuenta);
-        
-        return memoria.movimientos.values().stream()
-                .filter(m -> m.getNumeroCuenta().equals(numeroCuenta))
-                .sorted(Comparator.comparing(Movimiento::getFecha).reversed())
-                .collect(Collectors.toList());
-    }
-
-    public List<Movimiento> obtenerHistorialPorRango(String numeroCuenta, LocalDate inicio, LocalDate fin) {
-        return obtenerHistorial(numeroCuenta).stream()
-                .filter(m -> {
-                    LocalDate fechaMov = m.getFecha().toLocalDate();
-                    return !fechaMov.isBefore(inicio) && !fechaMov.isAfter(fin);
-                })
-                .collect(Collectors.toList());
-    }
-
-    // --- AUXILIARES ---
-
-    private void validarCantidadPositiva(BigDecimal cantidad) {
-        if (cantidad == null || cantidad.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("La cantidad debe ser mayor que cero.");
+        List<Movimiento> historial = new ArrayList<>();
+        //Guardamos solo los movimientos de esta cuenta
+        for (Movimiento m : memoria.movimientos.values()) {
+            if (m.getNumeroCuenta().equals(numeroCuenta)) {
+                historial.add(m);
+            }
         }
-    }
 
-    private Cuenta obtenerCuentaExistente(String numeroCuenta) {
-        return cuentaService.buscarPorNumero(numeroCuenta)
-                .orElseThrow(() -> new IllegalArgumentException("La cuenta " + numeroCuenta + " no existe."));
+        //Ordenamos la lista del más antiguo al más reciente
+        historial.sort((m1, m2) -> m2.getFecha().compareTo(m1.getFecha()));
+
+        return historial;
     }
 }

@@ -3,13 +3,13 @@ package com.novabank.modelo;
 import java.time.LocalDateTime;
 
 public class Cliente {
-    private Long id;
-    private String nombre;
-    private String apellidos;
-    private String dni;
-    private String email;
-    private String telefono;
-    private LocalDateTime fechaCreacion;
+    private Long id; //Identificador único del cliente
+    private String nombre; //Nombre del cliente
+    private String apellidos; //Apellidos del cliente
+    private String dni; //Número de dni del cliente
+    private String email; //Correo electrónico del cliente
+    private String telefono; //Número telefonico del cliente
+    private LocalDateTime fechaCreacion; //Fecha registro del cliente
 
     public Cliente(String nombre, String apellidos, String dni, String email, String telefono) {
         this.nombre = nombre;
