@@ -43,10 +43,38 @@ class ClienteServiceTest {
     }
 
     @Test
-    void crearCliente_conDatosIncompletos_debeLanzarExcepcion() {
+    void crearCliente_sinNombre_debeLanzarExcepcion() {
         // Intentamos crear un cliente dejando el nombre vacío
         assertThrows(IllegalArgumentException.class, () -> {
             clienteService.crearCliente("", "Perez", "12345678A", "juan@email.com", "600123123");
+        });
+    }
+    @Test
+    void crearCliente_sinApellidos_debeLanzarExcepcion() {
+        // Intentamos crear un cliente dejando los apellidos vacíos
+        assertThrows(IllegalArgumentException.class, () -> {
+            clienteService.crearCliente("Juan", "", "12345678A", "juan@email.com", "600123123");
+        });
+    }
+    @Test
+    void crearCliente_sinDni_debeLanzarExcepcion() {
+        // Intentamos crear un cliente dejando el dni vacío
+        assertThrows(IllegalArgumentException.class, () -> {
+            clienteService.crearCliente("Juan", "Perez", "", "juan@email.com", "600123123");
+        });
+    }
+    @Test
+    void crearCliente_sinEmail_debeLanzarExcepcion() {
+        // Intentamos crear un cliente dejando el email vacío
+        assertThrows(IllegalArgumentException.class, () -> {
+            clienteService.crearCliente("Juan", "Perez", "12345678A", "", "600123123");
+        });
+    }
+    @Test
+    void crearCliente_sinTelefono_debeLanzarExcepcion() {
+        // Intentamos crear un cliente dejando el telefono vacío
+        assertThrows(IllegalArgumentException.class, () -> {
+            clienteService.crearCliente("Juan", "Perez", "12345678A", "juan@email.com", "");
         });
     }
 }
