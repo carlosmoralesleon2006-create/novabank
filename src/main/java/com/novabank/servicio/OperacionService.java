@@ -63,6 +63,9 @@ public class OperacionService {
         if (origen.getSaldo().compareTo(cantidad) < 0) {
             throw new IllegalArgumentException("ERROR: Saldo insuficiente.");
         }
+        if(origen.getNumeroCuenta().equals(destino.getNumeroCuenta())){
+            throw new IllegalArgumentException("ERROR: No es posible transeferir dinero hacia la misma cuenta.");
+        }
 
         //Retiramos el saldo de la cuenta origen
         origen.setSaldo(origen.getSaldo().subtract(cantidad));
