@@ -34,9 +34,8 @@ public class Memoria {
     }
 
     //METODO ENCARGADO DE GUARDAR UN MOVIMIENTO EN LA LISTA CORRESPONDIENTE ASIGNANDOLE EL IDENTIFICADOR ÚNICO
-    public Movimiento guardarMovimiento(Movimiento movimiento) {
+    public void guardarMovimiento(Movimiento movimiento) {
         movimiento.setId(contadorMovimientos++);
         movimientos.put(movimiento.getId(), movimiento);
-        return movimiento;
     }
 }
