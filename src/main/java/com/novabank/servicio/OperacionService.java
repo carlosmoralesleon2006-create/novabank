@@ -5,10 +5,17 @@ import com.novabank.modelo.Movimiento;
 import com.novabank.modelo.TipoMovimiento;
 import com.novabank.repositorio.Memoria;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EmptyStackException;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.zip.DataFormatException;
 
 public class OperacionService {
 
@@ -99,5 +106,31 @@ public class OperacionService {
         historial.sort((m1, m2) -> m2.getFecha().compareTo(m1.getFecha()));
 
         return historial;
+    }
+
+    //METODO ENCARGADO DE OBTENER UNA LISTA DE MOVIMIENTOS EN UN RANGO DE FECHAS
+    public List<Movimiento> obtenerMovimientosRangoFecha(String inicio, String fin) {
+        LocalDate fInicioFormat;
+        LocalDate fFinFormat;
+        try {
+            fInicioFormat = LocalDate.parse(inicio, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            fFinFormat = LocalDate.parse(fin, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        } catch (Exception d) {
+            throw new IllegalArgumentException("El formato de las fechas introducidas es incorrecto");
+        }
+
+        if (fInicioFormat.isAfter(fFinFormat)) {
+            throw new IllegalArgumentException("Rango de fechas inválido");
+        }
+        if (memoria.movimientos.isEmpty()) {
+            throw new IllegalArgumentException("No hay ningún movimiento registrado.");
+        }
+        List<Movimiento> movFechas = memoria.movimientos.values().stream().filter(movimiento -> movimiento.getFecha() != null).filter(movimiento -> !movimiento.getFecha().toLocalDate().isBefore(fInicioFormat) ||
+                movimiento.getFecha().toLocalDate().isEqual(fInicioFormat) &&
+                        !movimiento.getFecha().toLocalDate().isAfter(fFinFormat) || movimiento.getFecha().toLocalDate().isEqual(fFinFormat)).toList();
+        if (movFechas.isEmpty()) {
+            System.out.println("No hay ningún movimiento registrado en el rango de fechas solicitado.");
+        }
+        return movFechas;
     }
 }
