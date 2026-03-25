@@ -9,6 +9,8 @@ import com.novabank.servicio.CuentaService;
 import com.novabank.servicio.OperacionService;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Scanner;
 
@@ -227,7 +229,8 @@ public class MenuConsola {
         System.out.println("\n--- CONSULTAS ---");
         System.out.println("1. Consultar saldo");
         System.out.println("2. Historial de movimientos");
-        System.out.println("3. Volver");
+        System.out.println("3. Movimientos en rango de fechas");
+        System.out.println("4. Volver");
         System.out.print("Seleccione una opción: ");
 
         String opcion = scanner.nextLine();
@@ -256,7 +259,19 @@ public class MenuConsola {
                         }
                     }
                     break;
+
                 case "3":
+                    System.out.println("Introduzca la fecha de inicio (dd/MM/yyyy): ");
+                    String fechaInicio = scanner.nextLine();
+                    System.out.println("Introduzca la fecha de fin (dd/MM/yyyy): ");
+                    String fechaFin = scanner.nextLine();
+
+                    List<Movimiento> movPorFecha = operacionService.obtenerMovimientosRangoFecha(fechaInicio, fechaFin);
+                    for(Movimiento m : movPorFecha) {
+                        System.out.println(m.getFecha().toLocalDate() + " | " + m.getTipo() + " | " + m.getCantidad() + " €");
+                    }
+                    break;
+                case "4":
                     break;
                 default:
                     System.out.println("Opción no válida.");
