@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 public class Movimiento {
     private Long id; //Identificador único del movimiento
-    private String numeroCuenta; //Numero de la cuenta asociada
+    private String numeroCuenta; //Número de la cuenta asociada
     private TipoMovimiento tipo; //Tipo de movimiento sacado de la enumeración
     private BigDecimal cantidad; //Cantidad de dinero usada
     private LocalDateTime fecha; //Fecha de realización del movimiento
