@@ -3,14 +3,13 @@ package com.novabank.ui;
 import com.novabank.modelo.Cliente;
 import com.novabank.modelo.Cuenta;
 import com.novabank.modelo.Movimiento;
-import com.novabank.repositorio.Memoria;
+import com.novabank.repositorio.ClienteDAO;
+import com.novabank.repositorio.CuentaDAO;
 import com.novabank.servicio.ClienteService;
 import com.novabank.servicio.CuentaService;
 import com.novabank.servicio.OperacionService;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Scanner;
 
@@ -18,9 +17,10 @@ public class MenuConsola {
 
     // Inicializamos las herramientas como variables de la clase (ya no son estáticas)
     private Scanner scanner = new Scanner(System.in);
-    private Memoria memoria = new Memoria();
-    private ClienteService clienteService = new ClienteService(memoria);
-    private CuentaService cuentaService = new CuentaService(memoria, clienteService);
+    private ClienteDAO clienteDAO = new ClienteDAO();
+    private CuentaDAO cuentaDAO = new CuentaDAO();
+    private ClienteService clienteService = new ClienteService(clienteDAO);
+    private CuentaService cuentaService = new CuentaService(cuentaDAO, clienteService);
     private OperacionService operacionService = new OperacionService(memoria, cuentaService);
 
     // Este es el método que arrancará el bucle del menú
