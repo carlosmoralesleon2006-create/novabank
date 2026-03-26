@@ -3,26 +3,19 @@ package com.novabank.servicio;
 import com.novabank.modelo.Cuenta;
 import com.novabank.modelo.Movimiento;
 import com.novabank.modelo.TipoMovimiento;
-import com.novabank.repositorio.Memoria;
 
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EmptyStackException;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.zip.DataFormatException;
 
 public class OperacionService {
 
-    private final Memoria memoria;
+    private final OperacionDAO memoria;
     private final CuentaService cuentaService;
 
-    public OperacionService(Memoria memoria, CuentaService cuentaService) {
+    public OperacionService(OperacionDAO memoria, CuentaService cuentaService) {
         this.memoria = memoria;
         this.cuentaService = cuentaService;
     }
