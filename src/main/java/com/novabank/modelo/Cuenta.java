@@ -1,7 +1,9 @@
 package com.novabank.modelo;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 public class Cuenta {
     private Long id; //Identificador único de la cuenta
@@ -20,7 +22,7 @@ public class Cuenta {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getNumeroCuenta() { return numeroCuenta; }
-    public Long getClienteId() { return clienteId; }
+    public long getClienteId() { return clienteId; }
     public BigDecimal getSaldo() { return saldo; }
     public void setSaldo(BigDecimal saldo) { this.saldo = saldo; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
