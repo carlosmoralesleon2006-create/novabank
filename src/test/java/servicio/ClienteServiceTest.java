@@ -23,22 +23,21 @@ class ClienteServiceTest {
     @Mock
     private ClienteDAO clienteDAOMock;
 
-    // Inyectamos el DAO falso en nuestro servicio
+    // Inyectamos el DAO en el servicio
     @InjectMocks
     private ClienteService clienteService;
 
     @Test
     void crearCliente_conDatosCorrectos_debeGuardarCliente() {
-        // Le decimos al mock cómo debe comportarse cuando le pidan guardar un cliente.
         // Simulamos que la base de datos lo guarda y le asigna el ID 1.
         Cliente clienteSimulado = new Cliente("Juan", "Perez", "12345678A", "juan@email.com", "600123123");
         clienteSimulado.setId(1L);
         when(clienteDAOMock.guardar(any(Cliente.class))).thenReturn(clienteSimulado);
 
-        // Ejecutamos la acción en el servicio
+        // Ejecutamos
         Cliente nuevo = clienteService.crearCliente("Juan", "Perez", "12345678A", "juan@email.com", "600123123");
 
-        // Comprobamos los resultados
+        // Comprobamos
         assertNotNull(nuevo);
         assertEquals("Juan", nuevo.getNombre());
         assertEquals("12345678A", nuevo.getDni());
@@ -50,7 +49,7 @@ class ClienteServiceTest {
 
     @Test
     void crearCliente_conDniRepetido_debeLanzarExcepcion() {
-        // Simulamos que la base de datos ya tiene un cliente registrado al buscar duplicados.
+        // Simulamos que la base de datos ya tiene un cliente registrado
         Cliente clienteExistente = new Cliente("Ana", "Gomez", "87654321B", "ana@email.com", "600111222");
         when(clienteDAOMock.listarTodos()).thenReturn(List.of(clienteExistente));
 
