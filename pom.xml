@@ -34,6 +34,11 @@
             <version>5.12.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version>
+        </dependency>
 
     </dependencies>
 
@@ -73,7 +78,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.ejemplo.Main</mainClass>
+                            <mainClass>com.novabank.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
