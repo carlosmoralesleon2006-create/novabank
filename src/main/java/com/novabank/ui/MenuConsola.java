@@ -5,6 +5,7 @@ import com.novabank.modelo.Cuenta;
 import com.novabank.modelo.Movimiento;
 import com.novabank.repositorio.ClienteDAO;
 import com.novabank.repositorio.CuentaDAO;
+import com.novabank.repositorio.OperacionDAO;
 import com.novabank.servicio.ClienteService;
 import com.novabank.servicio.CuentaService;
 import com.novabank.servicio.OperacionService;
@@ -19,9 +20,10 @@ public class MenuConsola {
     private Scanner scanner = new Scanner(System.in);
     private ClienteDAO clienteDAO = new ClienteDAO();
     private CuentaDAO cuentaDAO = new CuentaDAO();
+    private OperacionDAO operacionDAO = new OperacionDAO();
     private ClienteService clienteService = new ClienteService(clienteDAO);
     private CuentaService cuentaService = new CuentaService(cuentaDAO, clienteService);
-    private OperacionService operacionService = new OperacionService(memoria, cuentaService);
+    private OperacionService operacionService = new OperacionService(operacionDAO, cuentaService);
 
     // Este es el método que arrancará el bucle del menú
     public void iniciar() {
@@ -169,7 +171,7 @@ public class MenuConsola {
         } catch (NumberFormatException e) {
             System.out.println("ERROR: Debe introducir un número válido.");
         } catch (Exception e) {
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 
@@ -220,7 +222,7 @@ public class MenuConsola {
         } catch (NumberFormatException e) {
             System.out.println("ERROR: Formato de número incorrecto.");
         } catch (Exception e) {
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 
