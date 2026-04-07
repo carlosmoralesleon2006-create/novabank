@@ -49,4 +49,10 @@ public class CuentaService {
     public Cuenta buscarPorNumero(String numeroCuenta) {
         return cuentaDAO.buscarPorNumeroDeCuenta(numeroCuenta);
     }
+
+
+    // MÉTODO ENCARGADO DE ACTUALIZAR LOS DATOS DE UNA CUENTA
+    public void actualizar(Cuenta cuenta) {
+        cuentaDAO.actualizar(cuenta);
+    }
 }

@@ -99,6 +99,30 @@ public class CuentaDAO {
         return cuentas;
     }
 
+    // METODO PARA ACTUALIZAR LOS DATOS DE UNA CUENTA
+    public void actualizar(Cuenta cuenta) {
+        // Hacemos un UPDATE usando el ID de la cuenta
+        String sql = "UPDATE cuentas SET saldo = ? WHERE id = ?";
+
+        try (Connection conn = ConexionDB.obtenerConexion();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // Rellenamos los datos
+            pstmt.setBigDecimal(1, cuenta.getSaldo());
+            pstmt.setLong(2, cuenta.getId());
+
+            // Ejecutamos la actualización
+            int filasAfectadas = pstmt.executeUpdate();
+
+            if (filasAfectadas == 0) {
+                throw new RuntimeException("ERROR: No se encontró la cuenta para actualizar en la BD.");
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("ERROR: Fallo al actualizar la cuenta en la base de datos.", e);
+        }
+    }
+
     //METODO ENCARGADO DE TRANSFORMAR UNA FILA DE LA TABLA EN OBJETO
     private Cuenta mapearCuenta(ResultSet rs) throws SQLException {
         Cuenta c = new Cuenta(
@@ -106,13 +130,18 @@ public class CuentaDAO {
                 rs.getLong("cliente_id")
         );
         c.setId(rs.getLong("id"));
+
+        c.setSaldo(rs.getBigDecimal("saldo"));
+
+        c.setFechaCreacion(rs.getObject("fecha_creacion", java.time.LocalDateTime.class));
+
         return c;
     }
 
 
-    // METODO
+    // METODO ENCARGADO DE OBTENER EL SIGUIENTE NÚMERO CON EL FORMATO NECESARIO
     public long obtenerSiguienteNumeroSecuencial() {
-        // Buscamos el ID más alto, si la tabla está vacía, devuelva 0.
+        // Buscamos el ID más alto, si la tabla está vacía, devuelve 0.
         String sql = "SELECT COALESCE(MAX(id), 0) + 1 FROM cuentas";
 
         try (Connection conn = ConexionDB.obtenerConexion();
