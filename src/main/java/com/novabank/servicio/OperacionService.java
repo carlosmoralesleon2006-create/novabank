@@ -3,56 +3,53 @@ package com.novabank.servicio;
 import com.novabank.modelo.Cuenta;
 import com.novabank.modelo.Movimiento;
 import com.novabank.modelo.TipoMovimiento;
+import com.novabank.servicio.CuentaService;
+import com.novabank.repositorio.OperacionDAO;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 public class OperacionService {
 
-    private final OperacionDAO memoria;
+    private final OperacionDAO operacionDAO;
     private final CuentaService cuentaService;
 
-    public OperacionService(OperacionDAO memoria, CuentaService cuentaService) {
-        this.memoria = memoria;
+    public OperacionService(OperacionDAO operacionDAO, CuentaService cuentaService) {
+        this.operacionDAO = operacionDAO;
         this.cuentaService = cuentaService;
     }
 
-    //METODO ENCARGADO DE DEPOSITAR DINERO EN EL SALDO DE UNA CUENTA
     public void depositar(String numeroCuenta, BigDecimal cantidad) {
         Cuenta cuenta = cuentaService.buscarPorNumero(numeroCuenta);
         if (cuenta == null) {
             throw new IllegalArgumentException("La cuenta no existe.");
         }
 
-        //Añadimos la cantidad al saldo
         cuenta.setSaldo(cuenta.getSaldo().add(cantidad));
+        cuentaService.actualizar(cuenta);
 
-        //Creamos y guardamos el movimiento
         Movimiento mov = new Movimiento(numeroCuenta, TipoMovimiento.DEPOSITO, cantidad);
-        memoria.guardarMovimiento(mov);
+        operacionDAO.guardarMovimiento(mov);
     }
 
-    //METODO ENCARGADO DE RETIRAR DINERO DEL SALDO DE UNA CUENTA
     public void retirar(String numeroCuenta, BigDecimal cantidad) {
         Cuenta cuenta = cuentaService.buscarPorNumero(numeroCuenta);
         if (cuenta == null) {
             throw new IllegalArgumentException("La cuenta no existe.");
         }
-
-        // Compararamos que el saldo sea mayor o igual a la cantidad que se quiere retirar
         if (cuenta.getSaldo().compareTo(cantidad) < 0) {
             throw new IllegalArgumentException("ERROR: Saldo insuficiente.");
         }
 
         cuenta.setSaldo(cuenta.getSaldo().subtract(cantidad));
+        cuentaService.actualizar(cuenta);
+
         Movimiento mov = new Movimiento(numeroCuenta, TipoMovimiento.RETIRO, cantidad);
-        memoria.guardarMovimiento(mov);
+        operacionDAO.guardarMovimiento(mov);
     }
 
-    //METODO ENCARGADO DE TRANSFERIR DINERO DE UNA CUENTA DE ORIGEN A UNA CUENTA DE DESTINO
     public void transferir(String cuentaOrigen, String cuentaDestino, BigDecimal cantidad) {
         Cuenta origen = cuentaService.buscarPorNumero(cuentaOrigen);
         Cuenta destino = cuentaService.buscarPorNumero(cuentaDestino);
@@ -63,67 +60,54 @@ public class OperacionService {
         if (origen.getSaldo().compareTo(cantidad) < 0) {
             throw new IllegalArgumentException("ERROR: Saldo insuficiente.");
         }
-        if(origen.getNumeroCuenta().equals(destino.getNumeroCuenta())){
-            throw new IllegalArgumentException("ERROR: No es posible transeferir dinero hacia la misma cuenta.");
+        if (origen.getNumeroCuenta().equals(destino.getNumeroCuenta())) {
+            throw new IllegalArgumentException("ERROR: No es posible transferir dinero hacia la misma cuenta.");
         }
 
-        //Retiramos el saldo de la cuenta origen
         origen.setSaldo(origen.getSaldo().subtract(cantidad));
+        destino.setSaldo(destino.getSaldo().add(cantidad));
 
         try {
-            //Depositamos el dinero en la cuenta destino
-            destino.setSaldo(destino.getSaldo().add(cantidad));
+            cuentaService.actualizar(origen);
+            cuentaService.actualizar(destino);
 
-            //Guardamos los movimientos
-            memoria.guardarMovimiento(new Movimiento(cuentaOrigen, TipoMovimiento.TRANSFERENCIA_SALIENTE, cantidad));
-            memoria.guardarMovimiento(new Movimiento(cuentaDestino, TipoMovimiento.TRANSFERENCIA_ENTRANTE, cantidad));
+            operacionDAO.guardarMovimiento(new Movimiento(cuentaOrigen, TipoMovimiento.TRANSFERENCIA_SALIENTE, cantidad));
+            operacionDAO.guardarMovimiento(new Movimiento(cuentaDestino, TipoMovimiento.TRANSFERENCIA_ENTRANTE, cantidad));
 
         } catch (Exception e) {
-            //Si algo falla devolvemos el saldo a su estado original
             origen.setSaldo(origen.getSaldo().add(cantidad));
-            throw new RuntimeException("Error en la transferencia");
+            destino.setSaldo(destino.getSaldo().subtract(cantidad));
+            throw new RuntimeException("Error en la transferencia: " + e.getMessage());
         }
     }
 
-    //METODO ENCARGADO DE OBTENER EL HISTORIAL DE MOVIMIENTOS DE UNA CUENTA
+    // OBTENER HISTORIAL DE MOVIMIENTOS DE UNA CUENTA
     public List<Movimiento> obtenerHistorial(String numeroCuenta) {
-        List<Movimiento> historial = new ArrayList<>();
-        //Guardamos solo los movimientos de esta cuenta
-        for (Movimiento m : memoria.movimientos.values()) {
-            if (m.getNumeroCuenta().equals(numeroCuenta)) {
-                historial.add(m);
-            }
-        }
-
-        //Ordenamos la lista del más antiguo al más reciente
-        historial.sort((m1, m2) -> m2.getFecha().compareTo(m1.getFecha()));
-
-        return historial;
+        return operacionDAO.obtenerHistorialPorCuenta(numeroCuenta);
     }
 
-    //METODO ENCARGADO DE OBTENER UNA LISTA DE MOVIMIENTOS EN UN RANGO DE FECHAS
+    // OBTIENE EL HISTORIAL DE MOVIMIENTOS EN UN RANGO DE FECHAS
     public List<Movimiento> obtenerMovimientosRangoFecha(String inicio, String fin) {
         LocalDate fInicioFormat;
         LocalDate fFinFormat;
         try {
-            fInicioFormat = LocalDate.parse(inicio, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            fFinFormat = LocalDate.parse(fin, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        } catch (Exception d) {
-            throw new IllegalArgumentException("El formato de las fechas introducidas es incorrecto");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            fInicioFormat = LocalDate.parse(inicio, formatter);
+            fFinFormat = LocalDate.parse(fin, formatter);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("El formato de las fechas introducidas es incorrecto. Use dd/MM/yyyy.");
         }
 
         if (fInicioFormat.isAfter(fFinFormat)) {
-            throw new IllegalArgumentException("Rango de fechas inválido");
+            throw new IllegalArgumentException("Rango de fechas inválido. La fecha de inicio debe ser anterior a la fecha de fin.");
         }
-        if (memoria.movimientos.isEmpty()) {
-            throw new IllegalArgumentException("No hay ningún movimiento registrado.");
-        }
-        List<Movimiento> movFechas = memoria.movimientos.values().stream().filter(movimiento -> movimiento.getFecha() != null).filter(movimiento -> !movimiento.getFecha().toLocalDate().isBefore(fInicioFormat) ||
-                movimiento.getFecha().toLocalDate().isEqual(fInicioFormat) &&
-                        !movimiento.getFecha().toLocalDate().isAfter(fFinFormat) || movimiento.getFecha().toLocalDate().isEqual(fFinFormat)).toList();
+
+        List<Movimiento> movFechas = operacionDAO.obtenerMovimientosPorRango(fInicioFormat, fFinFormat);
+
         if (movFechas.isEmpty()) {
-            System.out.println("No hay ningún movimiento registrado en el rango de fechas solicitado.");
+            throw new IllegalArgumentException("No hay ningún movimiento registrado en el rango de fechas solicitado.");
         }
+
         return movFechas;
     }
 }
