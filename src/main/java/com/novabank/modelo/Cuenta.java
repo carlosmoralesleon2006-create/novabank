@@ -26,4 +26,5 @@ public class Cuenta {
     public BigDecimal getSaldo() { return saldo; }
     public void setSaldo(BigDecimal saldo) { this.saldo = saldo; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
+    public void setFechaCreacion(LocalDateTime fechaCreacion){ this.fechaCreacion = fechaCreacion; }
 }
