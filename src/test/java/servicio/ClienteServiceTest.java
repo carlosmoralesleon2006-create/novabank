@@ -9,7 +9,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,7 +20,6 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ClienteServiceTest {
 
-    // Así no necesitamos que la base de datos PostgreSQL esté encendida para pasar los tests.
     @Mock
     private ClienteDAO clienteDAOMock;
 
@@ -29,15 +29,18 @@ class ClienteServiceTest {
 
     @Test
     void crearCliente_conDatosCorrectos_debeGuardarCliente() {
-        // Simulamos que la base de datos lo guarda y le asigna el ID 1.
-        Cliente clienteSimulado = new Cliente("Juan", "Perez", "12345678A", "juan@email.com", "600123123");
+        Cliente clienteSimulado = new Cliente.ClienteBuilder()
+                .conNombre("Juan")
+                .conApellidos("Perez")
+                .conDni("12345678A")
+                .conEmail("juan@email.com")
+                .conTelefono("600123123")
+                .build();
         clienteSimulado.setId(1L);
         when(clienteDAOMock.guardar(any(Cliente.class))).thenReturn(clienteSimulado);
 
-        // Ejecutamos
         Cliente nuevo = clienteService.crearCliente("Juan", "Perez", "12345678A", "juan@email.com", "600123123");
 
-        // Comprobamos
         assertNotNull(nuevo);
         assertEquals("Juan", nuevo.getNombre());
         assertEquals("12345678A", nuevo.getDni());
@@ -49,16 +52,20 @@ class ClienteServiceTest {
 
     @Test
     void crearCliente_conDniRepetido_debeLanzarExcepcion() {
-        // Simulamos que la base de datos ya tiene un cliente registrado
-        Cliente clienteExistente = new Cliente("Ana", "Gomez", "87654321B", "ana@email.com", "600111222");
-        when(clienteDAOMock.listarTodos()).thenReturn(List.of(clienteExistente));
+        Cliente clienteExistente = new Cliente.ClienteBuilder()
+                .conNombre("Ana")
+                .conApellidos("Gomez")
+                .conDni("87654321B")
+                .conEmail("ana@email.com")
+                .conTelefono("600111222")
+                .build();
 
-        // Intentamos crear otro cliente con el mismo DNI
+        when(clienteDAOMock.buscarPorDni("87654321B")).thenReturn(Optional.of(clienteExistente));
+
         assertThrows(IllegalArgumentException.class, () -> {
             clienteService.crearCliente("Pedro", "Ruiz", "87654321B", "pedro@email.com", "600333444");
         });
 
-        // Verificamos que al saltar la excepción, no se intentó guardar en la base de datos
         verify(clienteDAOMock, never()).guardar(any(Cliente.class));
     }
 
