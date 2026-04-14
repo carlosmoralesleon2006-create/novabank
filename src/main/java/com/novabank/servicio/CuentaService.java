@@ -3,8 +3,9 @@ package com.novabank.servicio;
 import com.novabank.modelo.Cliente;
 import com.novabank.modelo.Cuenta;
 import com.novabank.repositorio.CuentaDAO;
-import java.util.ArrayList;
+
 import java.util.List;
+import java.util.Optional;
 
 public class CuentaService {
 
@@ -16,16 +17,11 @@ public class CuentaService {
         this.clienteService = clienteService;
     }
 
-    //METODO QUE USA LA ID DEL CLIENTE PARA CREAR UNA CUENTA NUEVA
+    //METODO QUE USA EL ID DEL CLIENTE PARA CREAR UNA CUENTA NUEVA
     public Cuenta crearCuenta(Long clienteId) {
 
         //Usamos el método para buscar un cliente por su id
-        Cliente cliente = clienteService.buscarPorId(clienteId);
-
-        //Si no se encuentra el cliente lanzamos una excepción
-        if (cliente == null) {
-            throw new IllegalArgumentException("ERROR: No se encontró ningún cliente con ID " + clienteId);
-        }
+        Cliente cliente = clienteService.buscarPorId(clienteId).orElseThrow(() -> new IllegalArgumentException("ERROR: No se encontró ningún cliente con ID " + clienteId));
 
         //String con el prefijo por defecto de la cuenta
         String prefijo = "ES91210000";
@@ -45,8 +41,8 @@ public class CuentaService {
         return cuentaDAO.listarPorCliente(clienteId);
     }
 
-    //METODO ENCARGADO DE BUSCAR UNA CUENTA POR SU NUMERO DE CUENTA
-    public Cuenta buscarPorNumero(String numeroCuenta) {
+    //METODO ENCARGADO DE BUSCAR UNA CUENTA POR SU NÚMERO DE CUENTA
+    public Optional<Cuenta> buscarPorNumero(String numeroCuenta) {
         return cuentaDAO.buscarPorNumeroDeCuenta(numeroCuenta);
     }
 

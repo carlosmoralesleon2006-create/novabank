@@ -2,8 +2,8 @@ package com.novabank.servicio;
 
 import com.novabank.modelo.Cuenta;
 import com.novabank.modelo.Movimiento;
+import com.novabank.modelo.MovimientoFactory;
 import com.novabank.modelo.TipoMovimiento;
-import com.novabank.servicio.CuentaService;
 import com.novabank.repositorio.OperacionDAO;
 
 import java.math.BigDecimal;
@@ -22,23 +22,20 @@ public class OperacionService {
     }
 
     public void depositar(String numeroCuenta, BigDecimal cantidad) {
-        Cuenta cuenta = cuentaService.buscarPorNumero(numeroCuenta);
-        if (cuenta == null) {
-            throw new IllegalArgumentException("La cuenta no existe.");
-        }
+        Cuenta cuenta = cuentaService.buscarPorNumero(numeroCuenta)
+                .orElseThrow(() -> new IllegalArgumentException("La cuenta no existe."));
 
         cuenta.setSaldo(cuenta.getSaldo().add(cantidad));
         cuentaService.actualizar(cuenta);
 
-        Movimiento mov = new Movimiento(numeroCuenta, TipoMovimiento.DEPOSITO, cantidad);
+        Movimiento mov = MovimientoFactory.crearDeposito(numeroCuenta, cantidad);
         operacionDAO.guardarMovimiento(mov);
     }
 
     public void retirar(String numeroCuenta, BigDecimal cantidad) {
-        Cuenta cuenta = cuentaService.buscarPorNumero(numeroCuenta);
-        if (cuenta == null) {
-            throw new IllegalArgumentException("La cuenta no existe.");
-        }
+        Cuenta cuenta = cuentaService.buscarPorNumero(numeroCuenta)
+                .orElseThrow(() -> new IllegalArgumentException("La cuenta no existe."));
+
         if (cuenta.getSaldo().compareTo(cantidad) < 0) {
             throw new IllegalArgumentException("ERROR: Saldo insuficiente.");
         }
@@ -46,17 +43,16 @@ public class OperacionService {
         cuenta.setSaldo(cuenta.getSaldo().subtract(cantidad));
         cuentaService.actualizar(cuenta);
 
-        Movimiento mov = new Movimiento(numeroCuenta, TipoMovimiento.RETIRO, cantidad);
+        Movimiento mov = MovimientoFactory.crearRetiro(numeroCuenta, cantidad);
         operacionDAO.guardarMovimiento(mov);
     }
 
     public void transferir(String cuentaOrigen, String cuentaDestino, BigDecimal cantidad) {
-        Cuenta origen = cuentaService.buscarPorNumero(cuentaOrigen);
-        Cuenta destino = cuentaService.buscarPorNumero(cuentaDestino);
+        Cuenta origen = cuentaService.buscarPorNumero(cuentaOrigen)
+                .orElseThrow(() -> new IllegalArgumentException("La cuenta de origen no existe."));
 
-        if (origen == null || destino == null) {
-            throw new IllegalArgumentException("Una de las cuentas no existe.");
-        }
+        Cuenta destino = cuentaService.buscarPorNumero(cuentaDestino)
+                .orElseThrow(() -> new IllegalArgumentException("La cuenta de destino no existe."));
         if (origen.getSaldo().compareTo(cantidad) < 0) {
             throw new IllegalArgumentException("ERROR: Saldo insuficiente.");
         }
@@ -71,8 +67,8 @@ public class OperacionService {
             cuentaService.actualizar(origen);
             cuentaService.actualizar(destino);
 
-            operacionDAO.guardarMovimiento(new Movimiento(cuentaOrigen, TipoMovimiento.TRANSFERENCIA_SALIENTE, cantidad));
-            operacionDAO.guardarMovimiento(new Movimiento(cuentaDestino, TipoMovimiento.TRANSFERENCIA_ENTRANTE, cantidad));
+            operacionDAO.guardarMovimiento(MovimientoFactory.crearTransferenciaSaliente(cuentaOrigen, cantidad));
+            operacionDAO.guardarMovimiento(MovimientoFactory.crearTransferenciaEntrante(cuentaDestino, cantidad));
 
         } catch (Exception e) {
             origen.setSaldo(origen.getSaldo().add(cantidad));
