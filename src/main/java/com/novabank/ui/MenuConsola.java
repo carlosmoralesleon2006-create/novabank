@@ -3,27 +3,27 @@ package com.novabank.ui;
 import com.novabank.modelo.Cliente;
 import com.novabank.modelo.Cuenta;
 import com.novabank.modelo.Movimiento;
-import com.novabank.repositorio.ClienteDAO;
-import com.novabank.repositorio.CuentaDAO;
-import com.novabank.repositorio.OperacionDAO;
+import com.novabank.repositorio.*;
+
 import com.novabank.servicio.ClienteService;
 import com.novabank.servicio.CuentaService;
 import com.novabank.servicio.OperacionService;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 
 public class MenuConsola {
 
     // Inicializamos las herramientas como variables de la clase (ya no son estáticas)
-    private Scanner scanner = new Scanner(System.in);
-    private ClienteDAO clienteDAO = new ClienteDAO();
-    private CuentaDAO cuentaDAO = new CuentaDAO();
-    private OperacionDAO operacionDAO = new OperacionDAO();
-    private ClienteService clienteService = new ClienteService(clienteDAO);
-    private CuentaService cuentaService = new CuentaService(cuentaDAO, clienteService);
-    private OperacionService operacionService = new OperacionService(operacionDAO, cuentaService);
+    private final Scanner scanner = new Scanner(System.in);
+    private final ClienteDAO clienteDAO = new ClienteDAOimpl();
+    private final CuentaDAO cuentaDAO = new CuentaDAOimpl();
+    private final OperacionDAO operacionDAO = new OperacionDAOimpl();
+    private final ClienteService clienteService = new ClienteService(clienteDAO);
+    private final CuentaService cuentaService = new CuentaService(cuentaDAO, clienteService);
+    private final OperacionService operacionService = new OperacionService(operacionDAO, cuentaService);
 
     // Este es el método que arrancará el bucle del menú
     public void iniciar() {
@@ -95,12 +95,10 @@ public class MenuConsola {
                 case "2":
                     System.out.print("Introduzca el DNI a buscar: ");
                     String dniBusqueda = scanner.nextLine();
-                    Cliente encontrado = clienteService.buscarPorDni(dniBusqueda);
-                    if (encontrado != null) {
-                        System.out.println("Cliente encontrado: " + encontrado.getNombre() + " " + encontrado.getApellidos() + " (ID: " + encontrado.getId() + ")");
-                    } else {
-                        System.out.println("ERROR: No se encontró ningún cliente.");
-                    }
+                    clienteService.buscarPorDni(dniBusqueda).ifPresentOrElse(
+                            encontrado -> System.out.println("Cliente encontrado: " + encontrado.getNombre() + " " + encontrado.getApellidos() + " (ID: " + encontrado.getId() + ")"),
+                            () -> System.out.println("ERROR: No se encontró ningún cliente con ese DNI.")
+                    );
                     break;
                 case "3":
                     List<Cliente> lista = clienteService.listarClientes();
@@ -156,12 +154,11 @@ public class MenuConsola {
                 case "3":
                     System.out.print("Introduzca número de cuenta: ");
                     String numCuenta = scanner.nextLine();
-                    Cuenta c = cuentaService.buscarPorNumero(numCuenta);
-                    if (c != null) {
-                        System.out.println("Número: " + c.getNumeroCuenta() + " | Saldo: " + c.getSaldo() + " €");
-                    } else {
-                        System.out.println("La cuenta no existe.");
-                    }
+                    cuentaService.buscarPorNumero(numCuenta).ifPresentOrElse(
+                            encontrada -> System.out.println("Cuenta encontrada: " + encontrada.getNumeroCuenta() + " (Saldo: " + encontrada.getSaldo()),
+                            () -> System.out.println("ERROR: No se ha encontrado ninguna cuenta con ese número")
+                    );
+
                     break;
                 case "4":
                     break;
@@ -242,12 +239,10 @@ public class MenuConsola {
                 case "1":
                     System.out.print("Introduzca número de cuenta: ");
                     String numCuenta = scanner.nextLine();
-                    Cuenta c = cuentaService.buscarPorNumero(numCuenta);
-                    if (c != null) {
-                        System.out.println("Saldo actual: " + c.getSaldo() + " €");
-                    } else {
-                        System.out.println("La cuenta no existe.");
-                    }
+                    cuentaService.buscarPorNumero(numCuenta).ifPresentOrElse(
+                            encontrada -> System.out.println("Saldo actual: " + encontrada.getSaldo() + " €"),
+                            () -> System.out.println("ERROR: No se ha encontrado ninguna cuenta con ese número")
+                    );
                     break;
                 case "2":
                     System.out.print("Introduzca número de cuenta: ");
