@@ -10,9 +10,6 @@ public class ConexionDB {
     private static final String USUARIO = "postgres";
     private static final String PASSWORD = "root";
 
-
-    private static Connection conexion;
-
     private ConexionDB() {}
 
     public static Connection obtenerConexion() {
