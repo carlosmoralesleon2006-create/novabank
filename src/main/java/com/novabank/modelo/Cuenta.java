@@ -1,14 +1,12 @@
 package com.novabank.modelo;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 public class Cuenta {
     private Long id; //Identificador único de la cuenta
-    private String numeroCuenta; //Número unico de la cuenta
-    private Long clienteId; //Identificador del cliente asociado a la cuenta
+    private final String numeroCuenta; //Número unico de la cuenta
+    private final Long clienteId; //Identificador del cliente asociado a la cuenta
     private BigDecimal saldo; //Cantidad de dinero que posee la cuenta
     private LocalDateTime fechaCreacion; //Fecha en la que creó la cuenta
 
