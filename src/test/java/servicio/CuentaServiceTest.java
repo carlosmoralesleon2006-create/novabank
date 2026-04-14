@@ -2,36 +2,35 @@ package servicio;
 
 import com.novabank.modelo.Cliente;
 import com.novabank.modelo.Cuenta;
-import com.novabank.repositorio.Memoria;
+import com.novabank.repositorio.CuentaDAO;
 import com.novabank.servicio.ClienteService;
 import com.novabank.servicio.CuentaService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-// Activamos Mockito en esta clase
+// Activamos Mockito
 @ExtendWith(MockitoExtension.class)
 class CuentaServiceTest {
 
-    // Mockito lo "espía" para dejarnos verificar cuántas veces se llaman a sus métodos.
-    @Spy
-    private Memoria memoriaSpy = new Memoria();
+    // Mock DAO
+    @Mock
+    private CuentaDAO cuentaDAOMock;
 
-    // Lo aislamos para no depender de la creación real de clientes.
     @Mock
     private ClienteService clienteServiceMock;
 
-    // Inyectamos los dobles en nuestro servicio principal
+    // Inyectamos los mocks en nuestro servicio principal
     @InjectMocks
     private CuentaService cuentaService;
 
@@ -39,12 +38,17 @@ class CuentaServiceTest {
     void crearCuenta_conClienteExistente_debeGenerarYGuardarCuenta() {
         // Preparamos
         Long idCliente = 1L;
-        // Creamos un cliente solo para que el mock lo devuelva
         Cliente clienteSimulado = new Cliente("Juan", "Perez", "12345678A", "juan@email.com", "600123123");
         clienteSimulado.setId(idCliente);
 
-        // Cuando el CuentaService pregunte por el ID 1, devuelve el clienteSimulado
+        // Simulamos que el ClienteService encuentra al cliente
         when(clienteServiceMock.buscarPorId(idCliente)).thenReturn(clienteSimulado);
+
+        // ¡Simulamos que la base de datos devuelve '1' como siguiente número secuencial
+        when(cuentaDAOMock.obtenerSiguienteNumeroSecuencial()).thenReturn(1L);
+
+        // Simulamos que al guardar en BD, devuelve la misma cuenta que le pasamos
+        when(cuentaDAOMock.guardar(any(Cuenta.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Ejecutamos
         Cuenta nuevaCuenta = cuentaService.crearCuenta(idCliente);
@@ -53,15 +57,16 @@ class CuentaServiceTest {
         assertNotNull(nuevaCuenta);
         assertEquals(idCliente, nuevaCuenta.getClienteId());
         assertEquals("ES91210000000000000001", nuevaCuenta.getNumeroCuenta());
+
         assertEquals(BigDecimal.ZERO, nuevaCuenta.getSaldo());
 
-        // Verificamos que la memoria ha guardado la cuenta exactamente 1 vez
-        verify(memoriaSpy, times(1)).guardarCuenta(any(Cuenta.class));
+        // Verificamos que el DAO ha guardado la cuenta exactamente 1 vez
+        verify(cuentaDAOMock, times(1)).guardar(any(Cuenta.class));
     }
 
     @Test
     void crearCuenta_conClienteInexistente_debeLanzarExcepcion() {
-        // Le decimos al mock que devuelva null como si no hubiera encontrado al cliente
+        // Simulamos que no encuentra al cliente
         when(clienteServiceMock.buscarPorId(9999L)).thenReturn(null);
 
         // Verificamos que lanza la excepción
@@ -69,22 +74,28 @@ class CuentaServiceTest {
             cuentaService.crearCuenta(9999L);
         });
 
-        // Verificamos que NUNCA se llegó a llamar al método guardarCuenta
-        verify(memoriaSpy, never()).guardarCuenta(any(Cuenta.class));
+        // Verificamos que nunca se llamó al DAO para guardar la cuenta
+        verify(cuentaDAOMock, never()).guardar(any(Cuenta.class));
     }
 
     @Test
     void listarCuentasDeCliente_debeDevolverSoloCuentasDelCliente() {
         Long idCliente = 1L;
 
-        // insertamos dos cuentas directamente en la memoria espía para simular que ya existen.
+        // Preparamos dos cuentas de prueba
         Cuenta cuenta1 = new Cuenta("ES91210000000000000001", idCliente);
         Cuenta cuenta2 = new Cuenta("ES91210000000000000002", idCliente);
-        memoriaSpy.cuentas.put(cuenta1.getNumeroCuenta(), cuenta1);
-        memoriaSpy.cuentas.put(cuenta2.getNumeroCuenta(), cuenta2);
 
+        // Simulamos que al buscar en la base de datos, devuelve nuestra lista prefabricada
+        when(cuentaDAOMock.listarPorCliente(idCliente)).thenReturn(Arrays.asList(cuenta1, cuenta2));
+
+        // Ejecutamos
         List<Cuenta> cuentasDeAna = cuentaService.listarCuentasDeCliente(idCliente);
 
+        // Comprobamos
         assertEquals(2, cuentasDeAna.size());
+
+        // Verificamos que se llamó al método correcto del DAO
+        verify(cuentaDAOMock, times(1)).listarPorCliente(idCliente);
     }
 }
