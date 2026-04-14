@@ -1,17 +1,17 @@
 package com.novabank.servicio;
 
 import com.novabank.modelo.Cliente;
-import com.novabank.repositorio.Memoria;
+import com.novabank.repositorio.ClienteDAO;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClienteService {
 
-    private final Memoria memoria;
 
-    public ClienteService(Memoria memoria) {
-        this.memoria = memoria;
+    ClienteDAO clienteDAO = new ClienteDAO();
+    public ClienteService(ClienteDAO clienteDAO) {
+        this.clienteDAO = clienteDAO;
     }
 
 
@@ -44,8 +44,9 @@ public class ClienteService {
             throw new IllegalArgumentException("El teléfono debe tener 9 dígitos y empezar por 6, 7, 8 o 9.");
         }
 
+
         // Validamos que DNI, Email y Teléfono sean únicos
-        for (Cliente c : memoria.clientes.values()) {
+        for (Cliente c : clienteDAO.listarTodos()) {
             if (c.getDni().equalsIgnoreCase(dni)) {
                 throw new IllegalArgumentException("Ya existe un cliente con el DNI " + dni + ".");
             }
@@ -58,12 +59,12 @@ public class ClienteService {
         }
 
         Cliente nuevoCliente = new Cliente(nombre, apellidos, dni, email, telefono);
-        return memoria.guardarCliente(nuevoCliente);
+        return clienteDAO.guardar(nuevoCliente);
     }
 
     //METODO ENCARGADO DE BUSCAR UN CLIENTE POR SU DNI
     public Cliente buscarPorDni(String dni) {
-        for (Cliente c : memoria.clientes.values()) {
+        for (Cliente c : clienteDAO.listarTodos()) {
             if (c.getDni().equals(dni)) {
                 return c;
             }
@@ -73,11 +74,11 @@ public class ClienteService {
 
     //METODO ENCARGADO DE BUSCAR UN CLIENTE POR SU IDENTIFICADOR ÚNICO
     public Cliente buscarPorId(Long id) {
-        return memoria.clientes.get(id);
+        return clienteDAO.buscarPorId(id);
     }
 
     //METODO ENCARGADO DE LISTAR TODOS LOS CLIENTES ALMACENADOS
     public List<Cliente> listarClientes() {
-        return new ArrayList<>(memoria.clientes.values());
+        return new ArrayList<>(clienteDAO.listarTodos());
     }
 }
