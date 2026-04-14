@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -47,7 +48,7 @@ class OperacionServiceTest {
     @Test
     void depositar_conImportePositivo_debeActualizarSaldo() {
         // Le decimos al mock cómo debe comportarse.
-        when(cuentaServiceMock.buscarPorNumero("ES91210000000000000001")).thenReturn(cuentaOrigen);
+        when(cuentaServiceMock.buscarPorNumero("ES91210000000000000001")).thenReturn(Optional.ofNullable(cuentaOrigen));
 
         // Hacemos un depósito de 500€
         operacionService.depositar("ES91210000000000000001", new BigDecimal("500"));
@@ -65,7 +66,7 @@ class OperacionServiceTest {
     @Test
     void retirar_conSaldoInsuficiente_debeLanzarExcepcion() {
         // Configuramos el mock para que devuelva la cuenta
-        when(cuentaServiceMock.buscarPorNumero("ES91210000000000000001")).thenReturn(cuentaOrigen);
+        when(cuentaServiceMock.buscarPorNumero("ES91210000000000000001")).thenReturn(Optional.ofNullable(cuentaOrigen));
 
         // Intentamos retirar 5000€
         assertThrows(IllegalArgumentException.class, () -> {
@@ -80,8 +81,8 @@ class OperacionServiceTest {
     @Test
     void transferir_conSaldoSuficiente_debeActualizarAmbasCuentas() {
         // Configuramos el mock para que devuelva ambas cuentas
-        when(cuentaServiceMock.buscarPorNumero("ES91210000000000000001")).thenReturn(cuentaOrigen);
-        when(cuentaServiceMock.buscarPorNumero("ES91210000000000000002")).thenReturn(cuentaDestino);
+        when(cuentaServiceMock.buscarPorNumero("ES91210000000000000001")).thenReturn(Optional.ofNullable(cuentaOrigen));
+        when(cuentaServiceMock.buscarPorNumero("ES91210000000000000002")).thenReturn(Optional.ofNullable(cuentaDestino));
 
         // Transferimos 300€ del origen al destino
         operacionService.transferir("ES91210000000000000001", "ES91210000000000000002", new BigDecimal("300"));

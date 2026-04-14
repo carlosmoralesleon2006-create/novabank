@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,7 +43,7 @@ class CuentaServiceTest {
         clienteSimulado.setId(idCliente);
 
         // Simulamos que el ClienteService encuentra al cliente
-        when(clienteServiceMock.buscarPorId(idCliente)).thenReturn(clienteSimulado);
+        when(clienteServiceMock.buscarPorId(idCliente)).thenReturn(Optional.of(clienteSimulado));
 
         // ¡Simulamos que la base de datos devuelve '1' como siguiente número secuencial
         when(cuentaDAOMock.obtenerSiguienteNumeroSecuencial()).thenReturn(1L);
@@ -66,15 +67,12 @@ class CuentaServiceTest {
 
     @Test
     void crearCuenta_conClienteInexistente_debeLanzarExcepcion() {
-        // Simulamos que no encuentra al cliente
-        when(clienteServiceMock.buscarPorId(9999L)).thenReturn(null);
+        when(clienteServiceMock.buscarPorId(9999L)).thenReturn(Optional.empty());
 
-        // Verificamos que lanza la excepción
         assertThrows(IllegalArgumentException.class, () -> {
             cuentaService.crearCuenta(9999L);
         });
 
-        // Verificamos que nunca se llamó al DAO para guardar la cuenta
         verify(cuentaDAOMock, never()).guardar(any(Cuenta.class));
     }
 
