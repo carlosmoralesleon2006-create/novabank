@@ -4,6 +4,7 @@ import com.novabank.modelo.Cliente;
 import com.novabank.modelo.Cuenta;
 import com.novabank.repositorio.CuentaDAO;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,7 +49,7 @@ public class CuentaService {
 
 
     // MÉTODO ENCARGADO DE ACTUALIZAR LOS DATOS DE UNA CUENTA
-    public void actualizar(Cuenta cuenta) {
+    public void actualizar(Cuenta cuenta, Connection conn) {
         cuentaDAO.actualizar(cuenta);
     }
 }

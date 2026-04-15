@@ -3,10 +3,11 @@ package com.novabank.servicio;
 import com.novabank.modelo.Cuenta;
 import com.novabank.modelo.Movimiento;
 import com.novabank.modelo.MovimientoFactory;
-import com.novabank.modelo.TipoMovimiento;
+import com.novabank.repositorio.ConexionDB;
 import com.novabank.repositorio.OperacionDAO;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -21,17 +22,34 @@ public class OperacionService {
         this.cuentaService = cuentaService;
     }
 
+    //MÉTODO PARA DEPOSITAR DINERO EN UNA CUENTA
     public void depositar(String numeroCuenta, BigDecimal cantidad) {
         Cuenta cuenta = cuentaService.buscarPorNumero(numeroCuenta)
                 .orElseThrow(() -> new IllegalArgumentException("La cuenta no existe."));
 
         cuenta.setSaldo(cuenta.getSaldo().add(cantidad));
-        cuentaService.actualizar(cuenta);
 
-        Movimiento mov = MovimientoFactory.crearDeposito(numeroCuenta, cantidad);
-        operacionDAO.guardarMovimiento(mov);
+        try (Connection conn = ConexionDB.obtenerConexion()) {
+            conn.setAutoCommit(false);
+
+            try {
+                cuentaService.actualizar(cuenta, conn);
+                Movimiento mov = MovimientoFactory.crearDeposito(numeroCuenta, cantidad);
+                operacionDAO.guardarMovimiento(mov, conn);
+
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                cuenta.setSaldo(cuenta.getSaldo().subtract(cantidad));
+                throw new RuntimeException("Error al depositar: " + e.getMessage());
+            }
+        } catch (java.sql.SQLException e) {
+            throw new RuntimeException("Error grave de conexión durante el depósito.", e);
+        }
     }
 
+
+    //MÉTODO PARA RETIRAR DINERO DE UNA CUENTA
     public void retirar(String numeroCuenta, BigDecimal cantidad) {
         Cuenta cuenta = cuentaService.buscarPorNumero(numeroCuenta)
                 .orElseThrow(() -> new IllegalArgumentException("La cuenta no existe."));
@@ -41,18 +59,35 @@ public class OperacionService {
         }
 
         cuenta.setSaldo(cuenta.getSaldo().subtract(cantidad));
-        cuentaService.actualizar(cuenta);
 
-        Movimiento mov = MovimientoFactory.crearRetiro(numeroCuenta, cantidad);
-        operacionDAO.guardarMovimiento(mov);
+        try (Connection conn = ConexionDB.obtenerConexion()) {
+            conn.setAutoCommit(false);
+
+            try {
+                cuentaService.actualizar(cuenta, conn);
+                Movimiento mov = MovimientoFactory.crearRetiro(numeroCuenta, cantidad);
+                operacionDAO.guardarMovimiento(mov, conn);
+
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                cuenta.setSaldo(cuenta.getSaldo().add(cantidad));
+                throw new RuntimeException("Error al retirar: " + e.getMessage());
+            }
+        } catch (java.sql.SQLException e) {
+            throw new RuntimeException("Error grave de conexión durante el retiro.", e);
+        }
     }
 
+
+    //MÉTODO PARA TRANSFERIR DINERO DE UNA CUENTA A OTRA
     public void transferir(String cuentaOrigen, String cuentaDestino, BigDecimal cantidad) {
         Cuenta origen = cuentaService.buscarPorNumero(cuentaOrigen)
                 .orElseThrow(() -> new IllegalArgumentException("La cuenta de origen no existe."));
 
         Cuenta destino = cuentaService.buscarPorNumero(cuentaDestino)
                 .orElseThrow(() -> new IllegalArgumentException("La cuenta de destino no existe."));
+
         if (origen.getSaldo().compareTo(cantidad) < 0) {
             throw new IllegalArgumentException("ERROR: Saldo insuficiente.");
         }
@@ -63,17 +98,28 @@ public class OperacionService {
         origen.setSaldo(origen.getSaldo().subtract(cantidad));
         destino.setSaldo(destino.getSaldo().add(cantidad));
 
-        try {
-            cuentaService.actualizar(origen);
-            cuentaService.actualizar(destino);
+        try (Connection conn = ConexionDB.obtenerConexion()) {
 
-            operacionDAO.guardarMovimiento(MovimientoFactory.crearTransferenciaSaliente(cuentaOrigen, cantidad));
-            operacionDAO.guardarMovimiento(MovimientoFactory.crearTransferenciaEntrante(cuentaDestino, cantidad));
+            conn.setAutoCommit(false);
 
-        } catch (Exception e) {
-            origen.setSaldo(origen.getSaldo().add(cantidad));
-            destino.setSaldo(destino.getSaldo().subtract(cantidad));
-            throw new RuntimeException("Error en la transferencia: " + e.getMessage());
+            try {
+                cuentaService.actualizar(origen, conn);
+                cuentaService.actualizar(destino, conn);
+
+                operacionDAO.guardarMovimiento(MovimientoFactory.crearTransferenciaSaliente(cuentaOrigen, cantidad), conn);
+                operacionDAO.guardarMovimiento(MovimientoFactory.crearTransferenciaEntrante(cuentaDestino, cantidad), conn);
+
+                conn.commit();
+
+            } catch (Exception e) {
+                conn.rollback();
+
+                origen.setSaldo(origen.getSaldo().add(cantidad));
+                destino.setSaldo(destino.getSaldo().subtract(cantidad));
+                throw new RuntimeException("Error en la transferencia. Se ha realizado un rollback: " + e.getMessage());
+            }
+        } catch (java.sql.SQLException e) {
+            throw new RuntimeException("Error grave de conexión durante la transferencia.", e);
         }
     }
 

@@ -13,10 +13,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 // Activamos mockito
@@ -37,7 +39,7 @@ class OperacionServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Preparamos unas cuentas de prueba que usaremos en los tests
+        // Preparamos unas cuentas de prueba.
         cuentaOrigen = new Cuenta("ES91210000000000000001", 1000L);
         cuentaOrigen.setSaldo(new BigDecimal("1000")); // Le damos 1000€ iniciales
 
@@ -47,20 +49,18 @@ class OperacionServiceTest {
 
     @Test
     void depositar_conImportePositivo_debeActualizarSaldo() {
-        // Le decimos al mock cómo debe comportarse.
         when(cuentaServiceMock.buscarPorNumero("ES91210000000000000001")).thenReturn(Optional.ofNullable(cuentaOrigen));
 
         // Hacemos un depósito de 500€
         operacionService.depositar("ES91210000000000000001", new BigDecimal("500"));
 
-        // Comprobamos
         assertEquals(new BigDecimal("1500"), cuentaOrigen.getSaldo());
 
-        // Verificamos que se actualizó el saldo en la base de datos
-        verify(cuentaServiceMock, times(1)).actualizar(cuentaOrigen);
+        // Verificamos que se actualizó el saldo en la base de datos.
+        verify(cuentaServiceMock, times(1)).actualizar(eq(cuentaOrigen), any(Connection.class));
 
-        // Verificamos que se haya llamado al método guardarMovimiento en el DAO
-        verify(operacionDAOMock, times(1)).guardarMovimiento(any(Movimiento.class));
+        // Verificamos que se haya llamado el método guardarMovimiento en el DAO
+        verify(operacionDAOMock, times(1)).guardarMovimiento(any(Movimiento.class), any(Connection.class));
     }
 
     @Test
@@ -73,9 +73,9 @@ class OperacionServiceTest {
             operacionService.retirar("ES91210000000000000001", new BigDecimal("5000"));
         });
 
-        // Verificamos que no se actualizó la BD ni se guardó movimiento
-        verify(cuentaServiceMock, never()).actualizar(any());
-        verify(operacionDAOMock, never()).guardarMovimiento(any(Movimiento.class));
+        // Verificamos que no se actualizó la base de datos ni se guardó movimiento
+        verify(cuentaServiceMock, never()).actualizar(any(), any(Connection.class));
+        verify(operacionDAOMock, never()).guardarMovimiento(any(Movimiento.class), any(Connection.class));
     }
 
     @Test
@@ -91,11 +91,11 @@ class OperacionServiceTest {
         assertEquals(new BigDecimal("700"), cuentaOrigen.getSaldo());
         assertEquals(new BigDecimal("300"), cuentaDestino.getSaldo());
 
-        // Verificamos que se actualizaron ambas cuentas en la BD
-        verify(cuentaServiceMock, times(1)).actualizar(cuentaOrigen);
-        verify(cuentaServiceMock, times(1)).actualizar(cuentaDestino);
+        // Verificamos que se actualizan ambas cuentas en la BD
+        verify(cuentaServiceMock, times(1)).actualizar(eq(cuentaOrigen), any(Connection.class));
+        verify(cuentaServiceMock, times(1)).actualizar(eq(cuentaDestino), any(Connection.class));
 
         // Se deben haber guardado 2 movimientos
-        verify(operacionDAOMock, times(2)).guardarMovimiento(any(Movimiento.class));
+        verify(operacionDAOMock, times(2)).guardarMovimiento(any(Movimiento.class), any(Connection.class));
     }
 }

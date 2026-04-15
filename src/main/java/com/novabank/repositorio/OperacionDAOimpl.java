@@ -13,25 +13,16 @@ public class OperacionDAOimpl implements OperacionDAO {
 
     // GUARDA UN MOVIMIENTO EN LA BASE DE DATOS
     @Override
-    public Movimiento guardarMovimiento(Movimiento movimiento) {
+    public Movimiento guardarMovimiento(Movimiento movimiento, Connection conn) {
         String sql = "INSERT INTO movimientos (cuenta_id, tipo, cantidad) VALUES ((SELECT id FROM cuentas WHERE numero_cuenta = ?), ?, ?)";
 
-        try (Connection conn = ConexionDB.obtenerConexion();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            // Pasamos el número de cuenta (String). La subconsulta SQL lo convertirá en el ID.
             pstmt.setString(1, movimiento.getNumeroCuenta());
-
-            // Guardamos el tipo de movimiento
             pstmt.setString(2, movimiento.getTipo().name());
-
-            // Guardamos la cantidad
             pstmt.setBigDecimal(3, movimiento.getCantidad());
-
-            // Ejecutamos el insert
             pstmt.executeUpdate();
 
-            // Recuperamos el ID generado por la base de datos
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
                 if (rs.next()) {
                     movimiento.setId(rs.getLong(1));
@@ -41,7 +32,7 @@ public class OperacionDAOimpl implements OperacionDAO {
             return movimiento;
 
         } catch (SQLException e) {
-            throw new RuntimeException("ERROR: Fallo al guardar el movimiento en la base de datos.", e);
+            throw new RuntimeException("ERROR: Fallo al guardar el movimiento transaccional en la base de datos.", e);
         }
     }
 
